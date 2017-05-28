@@ -118,6 +118,9 @@ public class GameType implements Serializable{
      *     
      */
     public Boolean isGoldFishMode() {
+    	if (goldFishMode == null) {
+    		goldFishMode = false;
+    	}
         return goldFishMode;
     }
 

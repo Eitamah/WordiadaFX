@@ -7,7 +7,22 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.sun.javafx.collections.MappingChange.Map;
+
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 public class Dictionary implements Serializable{
 	/**
@@ -80,6 +95,9 @@ public class Dictionary implements Serializable{
 						else {
 							words.put(word, 1);
 						}
+						if (word.contains("SORES")) {
+							System.out.println(word);
+						}
 					}
 				}
 				
@@ -117,4 +135,65 @@ public class Dictionary implements Serializable{
 	public int getTotalWords() {
 		return totalWords;
 	}
+	
+	public List<String>	getLeastPopularWords() {
+		HashMap<String, Integer> temp = (HashMap<String, Integer>) words.clone();
+		sortByValue(temp);
+		
+		List<String> ret = FXCollections.observableArrayList(temp.keySet());
+		
+		for (String string : ret) {
+			System.out.println(words.get(string).toString());
+		}
+
+		
+		temp = sortMapByValues(temp);
+		
+		ret = FXCollections.observableArrayList(temp.keySet());
+		
+		for (String string : ret) {
+			System.out.println(words.get(string).toString());
+		}
+		return ret.subList(0, 10);
+		
+	}
+	
+	public static <K, V extends Comparable<? super V>> HashMap<K, V> sortByValue(HashMap<K, V> map) {
+	    return map.entrySet()
+	              .stream()
+	              .sorted(HashMap.Entry.comparingByValue(Collections.reverseOrder()))
+	              .collect(Collectors.toMap(
+        		    HashMap.Entry::getKey, 
+        		    HashMap.Entry::getValue, 
+	                (e1, e2) -> e1, 
+	                LinkedHashMap::new
+	              ));
+	}
+	
+	private static HashMap<String, Integer> sortMapByValues(HashMap<String, Integer> aMap) {
+        
+        Set<Entry<String,Integer>> mapEntries = aMap.entrySet();
+        
+        // used linked list to sort, because insertion of elements in linked list is faster than an array list. 
+        List<Entry<String,Integer>> aList = new LinkedList<Entry<String,Integer>>(mapEntries);
+
+        // sorting the List
+        Collections.sort(aList, new Comparator<Entry<String,Integer>>() {
+
+            @Override
+            public int compare(Entry<String, Integer> ele1,
+                    Entry<String, Integer> ele2) {
+                
+                return ele1.getValue().compareTo(ele2.getValue());
+            }
+        });
+        
+        // Storing the list into Linked HashMap to preserve the order of insertion. 
+        HashMap<String,Integer> aMap2 = new LinkedHashMap<String, Integer>();
+        for(Entry<String,Integer> entry: aList) {
+            aMap2.put(entry.getKey(), entry.getValue());
+        }
+        
+        return aMap2;
+    }
 }

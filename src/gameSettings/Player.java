@@ -19,6 +19,11 @@ import javax.xml.bind.annotation.XmlList;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+
 
 /**
  * <p>Java class for anonymous complex type.
@@ -66,6 +71,10 @@ public class Player implements Serializable{
     @XmlAttribute(name = "id", required = true)
     protected short id;
     
+    private StringProperty realName;
+    private StringProperty observeType;
+    private IntegerProperty observeID;
+    private IntegerProperty observeScore;
     private List<String> wordsPlayed = new ArrayList<String>();
 
     public List<String> getWordsPlayed() {
@@ -175,4 +184,39 @@ public class Player implements Serializable{
     public void setId(short value) {
         this.id = value;
     }
+
+	public void setName(String string) {
+		realName = new SimpleStringProperty(string);
+	}
+	
+	public StringProperty getRealName() {
+		return realName;
+	}
+	
+	public IntegerProperty getObserveID() {
+		if (observeID == null) {
+			observeID = new SimpleIntegerProperty(this.id);
+		}
+		
+		return observeID;
+	}
+
+	public StringProperty getObserveType() {
+		if (observeType == null) {
+			observeType = new SimpleStringProperty(this.type);
+		}
+		return observeType;
+	}
+	
+	public IntegerProperty getObserveScore() {
+		if (observeScore == null) {
+			observeScore = new SimpleIntegerProperty(0);
+		}
+		
+		return observeScore;
+	}
+	
+	public void UpdateScore(int score) {
+		observeScore.add(score);
+	}
 }

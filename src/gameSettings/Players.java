@@ -17,6 +17,9 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+
 
 /**
  * <p>Java class for anonymous complex type.
@@ -39,7 +42,7 @@ import javax.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "player"
+    //"player"
 })
 @XmlRootElement(name = "Players")
 public class Players implements Serializable{
@@ -50,6 +53,9 @@ public class Players implements Serializable{
 	private static final long serialVersionUID = 9067517017396771893L;
 	@XmlElement(name = "Player", required = true)
     protected List<Player> player;
+	
+	
+	//protected ObservableList<Player> playerList;
 
     /**
      * Gets the value of the player property.
@@ -80,4 +86,12 @@ public class Players implements Serializable{
         return this.player;
     }
 
+    private ObservableList<Player> playerList;
+    public ObservableList<Player> getPlayersList() {
+    	if (playerList == null) {
+    		playerList = FXCollections.observableArrayList(player);
+    	}
+    	
+    	return playerList;
+    }
 }

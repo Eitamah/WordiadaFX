@@ -3,6 +3,7 @@ package engine;
 import java.io.FileNotFoundException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -14,6 +15,7 @@ import engine.Tile.eTileState;
 import gameSettings.Player;
 import gameSettings.Player.ePlayerType;
 import gameSettings.Players;
+import javafx.beans.property.SimpleStringProperty;
 
 public class Game implements Serializable {
 	
@@ -37,7 +39,7 @@ public class Game implements Serializable {
 	private List<Turn> turns;
 	long timeStarted;
 	private Random random;
-	private HashMap<Player, Integer> score; 
+	private HashMap<Player, Number> score; 
 	
 	public Game() {
 		state = eGameState.UNINITIALIZED;
@@ -59,31 +61,12 @@ public class Game implements Serializable {
 	 */
 	private void checkPlayers() {
 		//TODO: Put back for assignment2.
-		/*if ((settings.getDescriptor().getPlayers() == null) ||
-			(settings.getDescriptor().getPlayers().getPlayer().size() < 2)) */{
-			// default is player1 and player2
-			Player player1 = new Player();
-			player1.setId((short)1234);
-			player1.setType("Human");
-			player1.getName().add("Player1");
-			
-			Player player2 = new Player();
-			player2.setId((short)4321);
-			player2.setType("Human");
-			player2.getName().add("Player2");
-			
-			settings.getDescriptor().setPlayers(new Players());
-			settings.getDescriptor().getPlayers().getPlayer().add(player1);
-			settings.getDescriptor().getPlayers().getPlayer().add(player2);
-			
-			score = new HashMap<Player, Integer>();
-			
-			for (Player players : settings.getDescriptor().getPlayers().getPlayer()) {
-				score.put(players, 0);	
-			}
+		if ((settings.getDescriptor().getPlayers() == null) ||
+			(settings.getDescriptor().getPlayers().getPlayer().size() < 2)) {
+			throw new IllegalArgumentException("Not enough players - must have atleast 2");
 		}
 		
-		/*for (Player player : settings.getDescriptor().getPlayers().getPlayer()) {
+		for (Player player : settings.getDescriptor().getPlayers().getPlayer()) {
 			if (Collections.frequency(settings.getDescriptor().getPlayers().getPlayer(), player) > 1) {
 				throw new IllegalArgumentException("Player with id " + player.getId() + " included more"
 						+ "than once in xml");
@@ -93,9 +76,9 @@ public class Game implements Serializable {
 				throw new IllegalArgumentException("Player with id " + player.getId() + " has an "
 						+ "invalid type");
 			}
-		}*/
 			
-			
+			player.setName(player.getName().get(0));
+		}		
 	}
 
 	public void startGame() {
@@ -199,7 +182,12 @@ public class Game implements Serializable {
 		
 		// word is fine, letters are fine - remove the letters from the board
 		board.removeLetters(word);
+
+		// First assignment (console) the score was in a list in this class
 		score.replace(getCurrentPlayer(), getScore(getCurrentPlayer()) + settings.getScore(word));
+		// Second assignment - for binding issues, score had to be moved to player (for table)
+		// i didnt remove the previous score just incase... 
+		getCurrentPlayer().UpdateScore(settings.getScore(word));
 		getCurrentPlayer().addWordPlayed(word);		
 	}
 
@@ -282,7 +270,7 @@ public class Game implements Serializable {
 	}
 
 	public int getScore(Player player) {
-		return score.get(player);
+		return score.get(player).intValue();
 	}
 
 	public void saveTurn(Turn turn) {

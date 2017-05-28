@@ -23,7 +23,7 @@ public class main extends Application {
         try {
         	 this.primaryStage = primaryStage;
              this.primaryStage.setTitle("Wordiada");
-             controller = new GameController(primaryStage);
+             controller = new GameController(primaryStage, gameManager);
 
             // Load root layout from fxml file.
             FXMLLoader loader = new FXMLLoader();
