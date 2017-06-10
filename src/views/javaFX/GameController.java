@@ -8,11 +8,17 @@ import javafx.scene.control.Button;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
 import engine.Game.eGameState;
+import gameSettings.Letter;
+import gameSettings.Letters;
 import gameSettings.Player;
 import engine.GameManager;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
@@ -28,16 +34,23 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Tab;
 
 import javafx.scene.layout.AnchorPane;
-
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.control.CheckBox;
 
 import javafx.scene.control.TableView;
-
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPaneBuilder;
+import javafx.scene.layout.TilePane;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 
-public class GameController {
+public class GameController implements Observer {
 	@FXML
 	private GridPane gridMainGrid;
 	@FXML
@@ -63,7 +76,7 @@ public class GameController {
 	@FXML
 	private TableView tablePlayers;
 	@FXML
-	private Tab tableLetters;
+	private TableView tableLetters;
 	@FXML
 	private TableView tableWords;
 	@FXML
@@ -91,9 +104,9 @@ public class GameController {
 	@FXML
 	private TableColumn<StringProperty, String> tableDictionaryWordColumn;
 	@FXML
-	private TableColumn tableLettersLettersColumn;
+	private TableColumn<Letter, String> tableLettersLettersColumn;
 	@FXML
-	private TableColumn tableLettersFreqColumn;
+	private TableColumn<Letter, Number> tableLettersFreqColumn;
 	@FXML
 	private TableColumn<Player, String> tablePlayersNameColumn;
 	@FXML
@@ -103,14 +116,15 @@ public class GameController {
 	@FXML
 	private TableColumn<Player, Number> tablePlayersScoreColumn;
 	@FXML
-	private TableColumn tableScoreNameColumn;
+	private TableColumn<WordTableData, String> tableWordsWordColumn;
 	@FXML
-	private TableColumn tableScoreScoreColumn;
+	private TableColumn<WordTableData, String> tableWordsScoreColumn;
 	@FXML
-	private Canvas canvasBoard;
+	private Pane paneBoard;
 	
 	Stage primaryStage;
 	GameManager gameManager;
+	TileController[][] board;
 	
 	public GameController(Stage primary, GameManager gm) {
 		primaryStage = primary;
@@ -163,10 +177,50 @@ public class GameController {
 		loadPlayersTable();
 		loadLettersTable();
 		loadDictionaryTable();
-		loadLettersTable();
 		loadTilesLeftLabel();
 		setCurrentPlayer();
+		loadWordsTable();
 		loadBoard();
+	}
+
+	final class WordTableData
+	{
+		SimpleStringProperty word;
+		SimpleStringProperty score;
+		int count;
+		SimpleStringProperty finalString;
+	}
+	
+	private void loadWordsTable() {
+		HashMap<String, WordTableData> words = new HashMap<String, WordTableData>();
+		
+		List<String> temp = gameManager.getCurrentGame().getCurrentPlayer().getWordsPlayed();
+		
+		for (String word : temp) {
+			if (words.containsKey(word)) {
+				words.get(word).count++;
+				words.get(word).finalString = new SimpleStringProperty(Integer.toString(
+							words.get(word).count) + " * " + word);
+			} else {
+				WordTableData data = new WordTableData();
+				data.word = new SimpleStringProperty(word);
+				data.score = new SimpleStringProperty(Integer.toString(gameManager.getCurrentGame().getSettings().getDictionary().getWordSegment(word))
+				+ " * " + gameManager.getCurrentGame().getSettings().getLetterScore(word)
+				+ " = " + gameManager.getCurrentGame().getSettings().getScore(word));
+				
+				data.finalString = new SimpleStringProperty(Integer.toString(data.count) + " * " + data.word);
+			}
+		}
+
+		ObservableList<WordTableData> list = FXCollections.observableArrayList();
+		for (WordTableData word : words.values()) {
+			list.add(word);
+		}
+		
+		tableWords.setItems(list);
+		tableWordsScoreColumn.setCellValueFactory(cellData -> (cellData.getValue().score));
+		tableWordsWordColumn.setCellValueFactory(cellData -> (cellData.getValue().finalString));
+
 		
 	}
 
@@ -179,13 +233,26 @@ public class GameController {
 	}
 
 	private void loadBoard() {
-		// TODO Auto-generated method stub
-		
+		paneBoard.getChildren().clear();
+		int size = gameManager.getCurrentGame().getBoard().getSize();
+		board = new TileController[size][size];
+		double height = paneBoard.getHeight() / size;
+		double width = paneBoard.getWidth() / size;
+		paneBoard.setVisible(true);
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
+				TileController tile = new TileController(this, i, j,
+						gameManager.getCurrentGame().getTile(i, j), height, width);
+				tile.setVisible(true);
+				board[i][j] = tile;
+				paneBoard.getChildren().add(tile);
+			}
+		}
 	}
 
 	private void setCurrentPlayer() {
-		// TODO Auto-generated method stub
-		
+		lblCurrentPlayer.textProperty().set("Current player: " +
+				gameManager.getCurrentGame().getCurrentPlayer().getName().get(0));
 	}
 
 	private void loadDictionaryTable() {
@@ -200,18 +267,28 @@ public class GameController {
 	}
 
 	private void loadLettersTable() {
+		List<Letter> letters = gameManager.getCurrentGame().getSettings().getDescriptor().getStructure().getLetters().getLetter();
+		ObservableList<Letter> f= FXCollections.observableArrayList();
 		
+		for (Letter letter : letters) {
+			f.add(letter);
+		}
+
+		tableLetters.setItems(f);
+		tableLettersFreqColumn.setCellValueFactory(cellData -> cellData.getValue().getFreqProperty());
+		tableLettersLettersColumn.setCellValueFactory(cellData -> cellData.getValue().getSignProperty());
 	}
 
 	private void loadTilesLeftLabel() {
-		// TODO Auto-generated method stub
+		labelTilesLeft.textProperty().set("Tiles left : " +
+				Integer.toString(gameManager.getCurrentGame().getBoard().getTilesLeft()));
 		
 	}
 
 	// Event Listener on Button[#btnStart].onAction
 	@FXML
 	public void handleStartBtnPressed(ActionEvent event) {
-		// TODO Autogenerated
+		
 	}
 	// Event Listener on Button[#btnAddPlayer].onAction
 	@FXML
@@ -246,5 +323,18 @@ public class GameController {
 		alert.setHeaderText(null);
 		alert.setContentText(message);
 		alert.showAndWait();		
+	}
+
+	@Override
+	public void update(Observable o, Object arg) {
+		for (int i = 0; i < board.length; i++) {
+			for (int j = 0; j < board.length; j++) {
+				System.out.println("I J " + Integer.toString(i) + Integer.toString(j));
+				board[i][j].Refresh();
+			}
+		}
+		
+		loadTilesLeftLabel();
+		setCurrentPlayer();
 	}
 }

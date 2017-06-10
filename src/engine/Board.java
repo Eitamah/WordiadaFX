@@ -3,12 +3,13 @@ package engine;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
 import java.util.Random;
 
 import engine.Tile.eTileState;
 import gameSettings.Letter;
 
-public class Board implements Serializable {
+public class Board extends Observable implements Serializable {
 	/**
 	 * 
 	 */
@@ -37,6 +38,7 @@ public class Board implements Serializable {
 				board[i][j] = new Tile(getNextLetter(), i, j);
 			}
 		}
+		setChanged();
 	}
 	
 	/*
@@ -60,6 +62,7 @@ public class Board implements Serializable {
 		}
 		
 		board[n][m].setState(newState);
+		setChanged();
 	}
 	
 	public int getTilesLeft() {
@@ -102,7 +105,7 @@ public class Board implements Serializable {
 				}
 			}
 		}
-		
+		setChanged();
 	}
 	
 	public List<Character> getFaceUpLetters() {
@@ -138,6 +141,7 @@ public class Board implements Serializable {
 		    }
 		    
 		}
+		setChanged();
 	}
 	
 	private Tile getFaceUpTileWithChar(Character c) {

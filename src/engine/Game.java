@@ -7,17 +7,21 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.JAXBException;
+import java.util.Observable;
+
 
 import engine.GameSettings.eGameType;
 import engine.Tile.eTileState;
 import gameSettings.Player;
 import gameSettings.Player.ePlayerType;
 import gameSettings.Players;
+import javafx.beans.InvalidationListener;
 import javafx.beans.property.SimpleStringProperty;
 
-public class Game implements Serializable {
+public class Game extends Observable implements Serializable{
 	
 	/**
 	 * 
@@ -102,11 +106,18 @@ public class Game implements Serializable {
 		}		
 		
 		timeStarted = System.currentTimeMillis();
-		playComputerTurns();
+		Thread thread = new Thread() {
+		    public void run() {
+				while (state == eGameState.RUNNING) {
+					playComputerTurnsTask();
+				}
+		  }
+		};
+		thread.start();
 	}
 
 	int counter =0;
-	public void playComputerTurns() {
+	public void playComputerTurnsTask() {
 		while ((getCurrentPlayer().getType().compareTo(ePlayerType.COMPUTER) == 0) &&
 				(state != eGameState.FINISHED)) {
 			int diceRoll = getDiceRoll();
@@ -120,6 +131,12 @@ public class Game implements Serializable {
 				board.flipTile(uncover.getCoord().x, uncover.getCoord().y, eTileState.FACE_UP);
 				uncoveredTiles = board.getFaceDownTiles();
 				tilesToUncover--;
+				try {
+					TimeUnit.MILLISECONDS.sleep(100);
+				} catch (InterruptedException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+				}
 			}
 			
 			List<Character> availableChars = board.getFaceUpLetters();
@@ -133,6 +150,13 @@ public class Game implements Serializable {
 			if (word != null) {
 				try {
 					playWord(word);
+					try {
+						TimeUnit.MILLISECONDS.sleep(100);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+//						e.printStackTrace();
+					}
+
 					Turn turn = new Turn(getCurrentPlayer(), true, word);
 					saveTurn(turn);
 				} catch (IllegalLettersException | InvalidWordException e) {

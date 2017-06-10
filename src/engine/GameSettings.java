@@ -57,20 +57,7 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 		jaxbUnmarshaller = jaxbContext.createUnmarshaller();
         SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		Schema schema;
-	/*	
-		try {
-			schema = sf.newSchema(new File("Wordiada.xsd"));
-			System.out.println("11111111111111111");
-			schema = sf.newSchema(getClass().getClassLoader().getResource("Wordiada.xsd"));
-			jaxbUnmarshaller.setSchema(schema);
-		} catch (SAXException e1) {
-			System.out.println("??????????" + e1.getMessage());
-		} catch (Exception e) {
-			System.out.println(e.toString());
-			System.out.println(e.getClass());
-			System.out.println(e.getCause());
-		}
-*/
+
 		jaxbUnmarshaller.setEventHandler(this);
 		String path = "";	
 		try {
@@ -83,8 +70,6 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 			xmlValid = false;
 			throw new FileNotFoundException("XML File not found");
 		} catch (Exception e) {
-			System.out.println(e.getCause());
-			System.out.println(e.getMessage());
 		}
 		
 		// If the xml was invalid, the event would have set xmlValid to false
@@ -199,10 +184,40 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 	}
 
 	public int getScore(String word) {
+		int score = 0;
+		
 		if (winnerBy == eWinnerBy.WordCount) {
-			return 1;
+			score = 1;
 		} else {
-			throw new NotImplementedException();
+			for (char letter : word.toCharArray()) {
+				score += getLetterScore(letter);
+			}
+			
+			score *= dictionary.getWordSegment(word);
 		}
+		
+		return score;
+	}
+	
+	public int getLetterScore(String word)
+	{
+		int score = 0;
+		for (char letter : word.toCharArray()) {
+			score += getLetterScore(letter);
+		}
+		return score;
+	}
+	
+	public int getLetterScore(char c)
+	{
+		List<Letter> list = gd.getStructure().getLetters().getLetter();
+
+		for (Letter letter : list) {
+			if (letter.getSign().get(0).charAt(0) == c) {
+				return letter.getScore();
+			}
+		}
+		
+		return 0;
 	}
 }

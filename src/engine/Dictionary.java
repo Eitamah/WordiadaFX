@@ -23,6 +23,7 @@ import com.sun.javafx.collections.MappingChange.Map;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.util.Pair;
 
 public class Dictionary implements Serializable{
 	/**
@@ -30,11 +31,13 @@ public class Dictionary implements Serializable{
 	 */
 	private static final long serialVersionUID = -2883912875622922743L;
 	private int totalWords;
+	private final int NUM_SEGMENTS = 3;
 	private static String INVALID_CHARS = "[!?,.:;\\-_=+\\*\"'\\(\\){}\\[\\]%$]";
 	
 	// Hashmap words for counting words - for later use (score based on frequency) 
 	// Trie is for smart computer
-	private HashMap<String, Integer> words;
+	// Pair<Integer, Integer>
+	private HashMap<String, WordScore> words;
 	private Trie trie;
 	
 	
@@ -43,7 +46,7 @@ public class Dictionary implements Serializable{
 	}
 	
 	public Dictionary(String filePath) throws FileNotFoundException, IllegalArgumentException {
-		words = new HashMap<String, Integer>();
+		words = new HashMap<String, WordScore>();
 		trie = new Trie();
 		try {
 			loadDictionary(filePath);
@@ -90,17 +93,17 @@ public class Dictionary implements Serializable{
 						totalWords++;
 						trie.add(word);
 						if (words.containsKey(word)) {
-							words.put(word, words.get(word).intValue() + 1);
+//							words.put(word, words.get(word).intValue() + 1);
+							words.get(word).incrementWordCount();
 						}
 						else {
-							words.put(word, 1);
-						}
-						if (word.contains("SORES")) {
-							System.out.println(word);
+							WordScore ws = new WordScore(0, 1);
+							words.put(word, ws);
 						}
 					}
 				}
 				
+				//setSegments();
 				currentLine = br.readLine();
 			}
 		} catch (FileNotFoundException e) {
@@ -129,7 +132,7 @@ public class Dictionary implements Serializable{
 		return trie.countWords(cs);
 	}
 	public int getWordCount(String word) {
-		return words.get(word);
+		return words.get(word).getWordCount();
 	}
 	
 	public int getTotalWords() {
@@ -137,28 +140,22 @@ public class Dictionary implements Serializable{
 	}
 	
 	public List<String>	getLeastPopularWords() {
-		HashMap<String, Integer> temp = (HashMap<String, Integer>) words.clone();
+		HashMap<String, WordScore> temp = (HashMap<String, WordScore>) words.clone();
 		sortByValue(temp);
 		
 		List<String> ret = FXCollections.observableArrayList(temp.keySet());
 		
-		for (String string : ret) {
-			System.out.println(words.get(string).toString());
-		}
-
-		
 		temp = sortMapByValues(temp);
 		
 		ret = FXCollections.observableArrayList(temp.keySet());
-		
-		for (String string : ret) {
-			System.out.println(words.get(string).toString());
-		}
-		return ret.subList(0, 10);
-		
+
+		if (ret.size() < 10)
+			return ret;
+		else
+			return ret.subList(0, 10);		
 	}
 	
-	public static <K, V extends Comparable<? super V>> HashMap<K, V> sortByValue(HashMap<K, V> map) {
+	public static <K, V extends Comparable<? super WordScore>> HashMap<String, WordScore> sortByValue(HashMap<String, WordScore> map) {
 	    return map.entrySet()
 	              .stream()
 	              .sorted(HashMap.Entry.comparingByValue(Collections.reverseOrder()))
@@ -170,30 +167,57 @@ public class Dictionary implements Serializable{
 	              ));
 	}
 	
-	private static HashMap<String, Integer> sortMapByValues(HashMap<String, Integer> aMap) {
+	private static HashMap<String, WordScore> sortMapByValues(HashMap<String, WordScore> aMap) {
         
-        Set<Entry<String,Integer>> mapEntries = aMap.entrySet();
+        Set<Entry<String, WordScore>> mapEntries = aMap.entrySet();
         
         // used linked list to sort, because insertion of elements in linked list is faster than an array list. 
-        List<Entry<String,Integer>> aList = new LinkedList<Entry<String,Integer>>(mapEntries);
+        List<Entry<String,WordScore>> aList = new LinkedList<Entry<String, WordScore>>(mapEntries);
 
         // sorting the List
-        Collections.sort(aList, new Comparator<Entry<String,Integer>>() {
+        Collections.sort(aList, new Comparator<Entry<String,WordScore>>() {
 
             @Override
-            public int compare(Entry<String, Integer> ele1,
-                    Entry<String, Integer> ele2) {
+            public int compare(Entry<String, WordScore> ele1,
+                    Entry<String, WordScore> ele2) {
                 
                 return ele1.getValue().compareTo(ele2.getValue());
             }
         });
         
         // Storing the list into Linked HashMap to preserve the order of insertion. 
-        HashMap<String,Integer> aMap2 = new LinkedHashMap<String, Integer>();
-        for(Entry<String,Integer> entry: aList) {
+        HashMap<String,WordScore> aMap2 = new LinkedHashMap<String, WordScore>();
+        for(Entry<String,WordScore> entry: aList) {
             aMap2.put(entry.getKey(), entry.getValue());
         }
         
         return aMap2;
     }
+
+	public int getWordSegment(String word) {
+		return words.get(word).getSegment();
+	}
+	
+	private void setSegments() {
+		int totalDifferentWords = words.size();
+		int segmentSize = totalDifferentWords / NUM_SEGMENTS;
+		
+		HashMap<String, WordScore> temp = (HashMap<String, WordScore>) words.clone();
+		sortByValue(temp);
+		
+		List<String> ret = FXCollections.observableArrayList(temp.keySet());
+		
+		temp = sortMapByValues(temp);
+		int currentSegment = NUM_SEGMENTS;
+		int nCounter = 0;/*
+		for (String word : temp.keySet()) {
+			words.get(word).setSegment(currentSegment);
+			nCounter++;
+			
+			if (nCounter > segmentSize) {
+				nCounter = 0;
+				currentSegment--;
+			}
+		}*/
+	}
 }
