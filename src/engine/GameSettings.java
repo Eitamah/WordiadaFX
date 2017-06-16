@@ -5,6 +5,8 @@ import java.io.FileNotFoundException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observable;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
@@ -19,23 +21,25 @@ import org.xml.sax.SAXException;
 
 import gameSettings.GameDescriptor;
 import gameSettings.Letter;
+import javafx.beans.InvalidationListener;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-public class GameSettings implements ValidationEventHandler, Serializable {
+public class GameSettings extends Observable implements ValidationEventHandler, Serializable{
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -5822399758574401295L;
 
 	public enum eWinnerBy {
-		WordCount
+		WordCount,
+		WordScore
 	}
 	
 	public enum eGameType {
 		Basic,
-		GoldFish
+		Multiplayer
 	}
-	
+	public boolean isGoldFishMode = false;
 	private String dictFilePath;
 	private int deckSize;
 	private Dictionary dictionary;
@@ -49,22 +53,41 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 	private int numOfDiceFacets;
 	private GameDescriptor gd;
 	
-	public GameSettings(String filePath) throws FileNotFoundException, IllegalArgumentException, JAXBException {
+	public enum eLoadSteps {
+		FILE(1),
+		UNMARSHAL(2),
+		DICTIONARY(3),
+		VALIDATION(4),
+		FINISHED(5);
+		
+		private int value;
+		public int getValue() {
+			return value;
+		}
+		private eLoadSteps(int num) {
+			value = num;
+		}
+	}
+	
+	public void Load(String filePath) throws FileNotFoundException, IllegalArgumentException, JAXBException {
 		valid = false;
 		JAXBContext jaxbContext;
 		Unmarshaller jaxbUnmarshaller;
 		jaxbContext = JAXBContext.newInstance(GameDescriptor.class);
 		jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-        SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-		Schema schema;
-
-		jaxbUnmarshaller.setEventHandler(this);
+        jaxbUnmarshaller.setEventHandler(this);
 		String path = "";	
 		try {
+			setChanged();
+			notifyObservers(eLoadSteps.FILE);
+			TimeUnit.MILLISECONDS.sleep(350);
 			File XMLfile = new File(filePath);
 			path = XMLfile.getAbsolutePath();
 			path = path.substring(0, path.lastIndexOf(File.separator));
 			xmlValid = true;
+			setChanged();
+			notifyObservers(eLoadSteps.UNMARSHAL);
+			TimeUnit.MILLISECONDS.sleep(350);
 			gd = (GameDescriptor) jaxbUnmarshaller.unmarshal(XMLfile);
 		} catch (JAXBException e) {
 			xmlValid = false;
@@ -75,8 +98,22 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 		// If the xml was invalid, the event would have set xmlValid to false
 		if (xmlValid) {
 			dictFilePath =  path + "\\dictionary\\" + gd.getStructure().getDictionaryFileName();
+			setChanged();
+			notifyObservers(eLoadSteps.DICTIONARY);
+			try {
+				TimeUnit.MILLISECONDS.sleep(350);
+			} catch (Exception e) {
+			}
 			dictionary = new Dictionary(dictFilePath);
 		
+			
+			setChanged();
+			notifyObservers(eLoadSteps.VALIDATION);
+			try {
+				TimeUnit.MILLISECONDS.sleep(350);
+			} catch (Exception e) {
+			}
+			
 			deckSize = gd.getStructure().getLetters().getTargetDeckSize();
 			boardSize = gd.getStructure().getBoardSize();
 		
@@ -89,16 +126,20 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 				throw new IllegalArgumentException("Deck size not enough for board");
 			}
 			
-			if (!gd.getGameType().getValue().equals(new String("Basic"))) {
-				throw new IllegalArgumentException("Game type must be basic");
+			if (!gd.getGameType().getValue().equals("MultiPlayer")) {
+				throw new IllegalArgumentException("Game type must be MultiPlayer ");
 			} else {
-				gameType = eGameType.Basic;
+				gameType = eGameType.Multiplayer;
 			}
 			
-			if (!gd.getGameType().getWinnerAccordingTo().equals("WordCount")) {
-				throw new IllegalArgumentException("Winner According To must be wordcount");
+			if (gd.getGameType().getWinnerAccordingTo().equals("WordScore")) {
+				winnerBy = eWinnerBy.WordScore;
 			} else {
 				winnerBy = eWinnerBy.WordCount;
+			}
+			
+			if (gd.getGameType().isGoldFishMode()) {
+				isGoldFishMode = true;
 			}
 			
 			if (gd.getStructure().getCubeFacets() >= Dice.MIN_SIDES) {
@@ -109,6 +150,9 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 			
 			loadLetters(gd);
 			valid = true;
+			
+			setChanged();
+			notifyObservers(eLoadSteps.FINISHED);
 		}
 	}
 
@@ -138,6 +182,10 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 				letters.add(let);
 			}
 		}
+	}
+	
+	public void recalculateFreq() {
+		
 	}
 
 	public boolean isValid() {
@@ -219,5 +267,9 @@ public class GameSettings implements ValidationEventHandler, Serializable {
 		}
 		
 		return 0;
+	}
+	
+	public eWinnerBy getWinnerBy() {
+		return winnerBy;
 	}
 }

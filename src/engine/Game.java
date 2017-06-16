@@ -1,6 +1,11 @@
 package engine;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,7 +24,6 @@ import gameSettings.Player;
 import gameSettings.Player.ePlayerType;
 import gameSettings.Players;
 import javafx.beans.InvalidationListener;
-import javafx.beans.property.SimpleStringProperty;
 
 public class Game extends Observable implements Serializable{
 	
@@ -40,23 +44,32 @@ public class Game extends Observable implements Serializable{
 	private Board board;
 	private Dice dice;
 	private int currentPlayer;
-	private List<Turn> turns;
 	long timeStarted;
 	private Random random;
 	private HashMap<Player, Number> score; 
+	private int numOfTurns;
+	private String lastWordPlayed;
+	
 	
 	public Game() {
 		state = eGameState.UNINITIALIZED;
 		settings = null;
 		board = null;
 		random = new Random();
+		score = new HashMap<Player, Number>();
+		settings = new GameSettings();
+		savedTurns = new ArrayList<ByteArrayOutputStream>();
 	}
 	
 	public void LoadSettings(String filePath) throws FileNotFoundException, IllegalArgumentException, 
 												JAXBException, IllegalStateException {
-		settings = new GameSettings(filePath);
+		
+		settings.Load(filePath);
+		
 		checkPlayers();
 		initGame();
+		setChanged();
+		notifyObservers(1);
 	}
 
 	/*
@@ -80,8 +93,6 @@ public class Game extends Observable implements Serializable{
 				throw new IllegalArgumentException("Player with id " + player.getId() + " has an "
 						+ "invalid type");
 			}
-			
-			player.setName(player.getName().get(0));
 		}		
 	}
 
@@ -92,6 +103,8 @@ public class Game extends Observable implements Serializable{
 	//			break;
 			} case LOADED: {
 				state = eGameState.RUNNING;
+				numOfTurns = 0;
+				saveTurn();
 				break;
 			} case RUNNING: {
 				throw new IllegalStateException("Game already running");
@@ -110,16 +123,25 @@ public class Game extends Observable implements Serializable{
 		    public void run() {
 				while (state == eGameState.RUNNING) {
 					playComputerTurnsTask();
+					try {
+						TimeUnit.MILLISECONDS.sleep(50);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+					}
 				}
 		  }
 		};
 		thread.start();
+		setChanged();
+		notifyObservers();
 	}
 
-	int counter =0;
+	int counter = 0;
 	public void playComputerTurnsTask() {
-		while ((getCurrentPlayer().getType().compareTo(ePlayerType.COMPUTER) == 0) &&
+		Player current = getCurrentPlayer();
+		if ((current.getType() == ePlayerType.COMPUTER) &&
 				(state != eGameState.FINISHED)) {
+			lastWordPlayed = "";
 			int diceRoll = getDiceRoll();
 			int tilesToUncover = diceRoll;
 			List<Tile> uncoveredTiles = board.getFaceDownTiles();
@@ -132,7 +154,7 @@ public class Game extends Observable implements Serializable{
 				uncoveredTiles = board.getFaceDownTiles();
 				tilesToUncover--;
 				try {
-					TimeUnit.MILLISECONDS.sleep(100);
+					TimeUnit.MILLISECONDS.sleep(50);
 				} catch (InterruptedException e) {
 //					// TODO Auto-generated catch block
 //					e.printStackTrace();
@@ -148,32 +170,35 @@ public class Game extends Observable implements Serializable{
 			
 			String word = settings.getDictionary().GetLongestWord(cs);
 			if (word != null) {
-				try {
+				/*try {
 					playWord(word);
-					try {
-						TimeUnit.MILLISECONDS.sleep(100);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-//						e.printStackTrace();
-					}
 
-					Turn turn = new Turn(getCurrentPlayer(), true, word);
-					saveTurn(turn);
+
 				} catch (IllegalLettersException | InvalidWordException e) {
 					// Should never happen during computer turn
-				}
+				}*/
 			} else {
-			// To avoid an endless game (no words available and no humans playing) 
+				// To avoid an endless game (no words available and no humans playing) 
 				counter++;
 				
-				if (counter > 10000) {
+				if (counter > 1000) {
 					state = eGameState.FINISHED;
 				}
 			}
 			
-			endTurn();
+			try {
+				TimeUnit.MILLISECONDS.sleep(200);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+//				e.printStackTrace();
+			}
+			
+			endTurn(word);
+			setChanged();
+			notifyObservers();
 		}
 	}
+	
 	
 	/*
 	 * 1. Check that all the letters chosen are face up
@@ -183,6 +208,7 @@ public class Game extends Observable implements Serializable{
 	 * 5. add word to player history
 	 * 6. increment next player
 	 */
+	// this is for computer play word
 	public void playWord(String word) throws IllegalLettersException, InvalidWordException {
 		List<Character> availableChars = board.getFaceUpLetters();
 		word = word.toUpperCase();
@@ -205,22 +231,28 @@ public class Game extends Observable implements Serializable{
 		}
 		
 		// word is fine, letters are fine - remove the letters from the board
-		board.removeLetters(word);
+//		board.removeLetters(word);
+		board.removeLetters();
+		
+//		if (board.getTilesLeft() == 0) {
+//			state = eGameState.FINISHED; 
+//		}
 
 		// First assignment (console) the score was in a list in this class
-		score.replace(getCurrentPlayer(), getScore(getCurrentPlayer()) + settings.getScore(word));
-		// Second assignment - for binding issues, score had to be moved to player (for table)
-		// i didnt remove the previous score just incase... 
-		getCurrentPlayer().UpdateScore(settings.getScore(word));
-		getCurrentPlayer().addWordPlayed(word);		
+		score.put(getCurrentPlayer(), getScore(getCurrentPlayer()) + settings.getScore(word));
+		
+		getCurrentPlayer().addWordPlayed(word);	
+		setChanged();
+		notifyObservers();
 	}
-
+	
 	private void initGame() {
 		currentPlayer = 0;
 		board = new Board(settings.getBoardSize(), settings.getLetters());
 		dice = new Dice(settings.getDiceFacets());
-		turns = new ArrayList<Turn>();
 		state = eGameState.LOADED;
+		setChanged();
+		notifyObservers();
 		
 	}
 
@@ -230,6 +262,9 @@ public class Game extends Observable implements Serializable{
 	
 	public void endGame() {
 		state = eGameState.FINISHED;		
+		
+		setChanged();
+		notifyObservers();
 	}
 	
 	public boolean isSettingsValid() {
@@ -256,16 +291,29 @@ public class Game extends Observable implements Serializable{
 	}
 
 	public Player getWinner() {
-		currentPlayer = (currentPlayer + 1) % settings.getDescriptor().getPlayers().getPlayer().size();
-		return settings.getDescriptor().getPlayers().getPlayer().get(currentPlayer);
+		ArrayList<Player> playersList = (ArrayList<Player>) settings.getDescriptor().getPlayers().getPlayer();
+		ArrayList<Player> playingPlayers = new ArrayList<Player>();
+		
+		for (Player player : playersList) {
+			if (player.isPlaying())
+				playingPlayers.add(player);
+		}
+		
+		int maxScore = 0;
+		Player winner = null;
+		
+		for (Player player : playingPlayers) {
+			if (getScore(player) > maxScore) {
+				winner = player;
+				maxScore = getScore(player);
+			}
+		}
+		
+		return winner;
 	}
 	
 	public int getDiceRoll() {
 		return dice.rollDice();
-	}
-
-	public List<Turn> getTurns() {
-		return turns;
 	}
 
 	public long getTimeStarted() {
@@ -276,28 +324,180 @@ public class Game extends Observable implements Serializable{
 		return settings.getDescriptor().getPlayers().getPlayer();
 	}
 
-	public void endTurn() {
-		if (settings.getDescriptor().getGameType().isGoldFishMode()) {
-			board.faceDownAllTiles();
+	public void endTurn(ArrayList<Tile> word) {
+		numOfTurns++;
+		setChanged();
+		notifyObservers();
+		
+		try {
+			TimeUnit.MILLISECONDS.sleep(300);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+//			e.printStackTrace();
+		}
+		String tempWord = "";
+		if (word.size() == 0) {
+			tempWord = new String("");
+		} else {
+			for (Tile tile : word) {
+				tempWord = tempWord + tile.getSign();
+			}
 		}
 		
-		incrementCurrentPlayer();
+		getCurrentPlayer().setLastWord(tempWord);
 
+		saveTurn();
+
+		if (settings.isGoldFishMode) {
+			board.faceDownAllTiles();
+		}
+		board.removeLetters();
+		
+		if (tempWord.length() > 1)
+		{
+			getCurrentPlayer().addWordPlayed(tempWord);	
+			score.put(getCurrentPlayer(), getScore(getCurrentPlayer()) + settings.getScore(tempWord));
+		}
+		setChanged();
+		notifyObservers();
+		
 		if ((board.getFaceDownTiles().size() == 0) && 
 				(board.getTilesLeft() == 0)) {
 			state = eGameState.FINISHED;			
 		}
+		
+		incrementCurrentPlayer();
+		checkForEndGame();
+		setChanged();
+		notifyObservers();
+	}
+	
+	public void endTurn(String word) {
+		numOfTurns++;
+		setChanged();
+		notifyObservers();
+		
+		try {
+			TimeUnit.MILLISECONDS.sleep(300);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+//			e.printStackTrace();
+		}
+		if (word == null) {
+			word = new String("");
+		}
+		
+		getCurrentPlayer().setLastWord(word);
+		board.selectLetters(word);
+		saveTurn();
+
+		if (settings.isGoldFishMode) {
+			board.faceDownAllTiles();
+		}
+
+		if (word != "") {
+			try {
+				
+				playWord(word);
+			} catch (IllegalLettersException e) {
+				// TODO Auto-generated catch block
+		//			e.printStackTrace();
+			} catch (InvalidWordException e) {
+				// TODO Auto-generated catch block
+		//			e.printStackTrace();
+			}
+		}		
+		
+		if ((board.getFaceDownTiles().size() == 0) && 
+				(board.getTilesLeft() == 0)) {
+			state = eGameState.FINISHED;			
+		}
+		
+		incrementCurrentPlayer();
+		checkForEndGame();
+		setChanged();
+		notifyObservers();
 	}
 
+	private void checkForEndGame() {
+		int playersPlaying = 0;
+		for (Player player : getPlayers()) {
+			if (player.isPlaying())
+				playersPlaying++;
+		}
+		
+		if (playersPlaying < 2)
+			state = eGameState.FINISHED;
+		
+		if (board.getTilesLeft() == 0) {
+			state = eGameState.FINISHED; 
+		}
+
+		if (state == eGameState.FINISHED) {
+			saveTurn();
+		}
+	}
+
+	public void Forfiet() {
+		getPlayers().get(currentPlayer).setIsPlaying(false);
+		endTurn("");
+//		state = eGameState.FINISHED;
+	}
 	private void incrementCurrentPlayer() {
 		currentPlayer = (currentPlayer + 1) % settings.getDescriptor().getPlayers().getPlayer().size();
+		
+		while (!settings.getDescriptor().getPlayers().getPlayer().get(currentPlayer).isPlaying()) {
+			currentPlayer = (currentPlayer + 1) % settings.getDescriptor().getPlayers().getPlayer().size();
+		}
 	}
 
 	public int getScore(Player player) {
-		return score.get(player).intValue();
+		if (score.containsKey(player)) {
+			return score.get(player).intValue();
+		} else {
+			return 0;
+		}
 	}
 
-	public void saveTurn(Turn turn) {
-		turns.add(turn);		
+	public int numberOfTurns() {
+		return numOfTurns;
+	}
+	
+	// transient - don't serialize this
+	transient List<ByteArrayOutputStream> savedTurns;
+
+	public int numOfSavedTurns() {
+		return savedTurns.size();
+	}
+	public void saveTurn() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectOutputStream oos;
+		try {
+			oos = new ObjectOutputStream(baos);
+			oos.writeObject(this);
+			savedTurns.add(baos);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+//			e.printStackTrace();
+		}
+	}
+	
+	public Game getTurn(int index) {
+		ByteArrayInputStream bais = new ByteArrayInputStream(savedTurns.get(index).toByteArray());
+		ObjectInputStream ois;
+		Game savedGame = null;
+		
+		try {
+			ois = new ObjectInputStream(bais);
+			savedGame = (Game)ois.readObject();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+//			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+//			e.printStackTrace();
+		}
+		
+		return savedGame;
 	}
 }

@@ -1,6 +1,12 @@
 package engine;
 
-public class WordScore implements Comparable<WordScore>{
+import java.io.Serializable;
+
+public class WordScore implements Comparable<WordScore>, Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1225082268170211191L;
 	private int segment;
 	private int wordCount;
 	

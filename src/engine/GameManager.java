@@ -32,7 +32,7 @@ public class GameManager implements Serializable{
 	
 	public void loadGame(String xmlPath) throws FileNotFoundException, JAXBException, 
 											IllegalArgumentException, IllegalStateException {
-		game = new Game();
+//		game = new Game();
 		game.LoadSettings(xmlPath);		
 	}
 	
@@ -42,5 +42,9 @@ public class GameManager implements Serializable{
 	
 	public Game getCurrentGame() {
 		return game;
+	}
+
+	public void initGame() {
+		game = new Game();
 	}
 }

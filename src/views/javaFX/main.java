@@ -33,12 +33,10 @@ public class main extends Application {
 
             // Show the scene containing the root layout.
             Scene scene = new Scene(rootLayout);
+
             primaryStage.setScene(scene);
             primaryStage.show();
         } catch (Exception e) {
-        	System.out.println(e.getCause());
-        	System.out.println(e.getMessage());
-            e.printStackTrace();
         }
 	}
 
@@ -46,11 +44,6 @@ public class main extends Application {
 		try {
 			launch(args);
 		} catch (Exception e) {
-			int a = 4;
-			a = 2 + 4;
-			Math.abs(a);
-//			System.out.println(e.getCause());
-//			System.out.println(e.getMessage());
 		}
 	}
 }

@@ -89,6 +89,7 @@ public class Dictionary implements Serializable{
 				String[] lineWords = currentLine.split(" ");
 				
 				for (String word : lineWords) {
+					
 					if (word.length() > 1) {
 						totalWords++;
 						trie.add(word);
@@ -103,9 +104,10 @@ public class Dictionary implements Serializable{
 					}
 				}
 				
-				//setSegments();
 				currentLine = br.readLine();
 			}
+			
+			setSegments();
 		} catch (FileNotFoundException e) {
 			throw new FileNotFoundException("Dictionary file not found");
 		}
@@ -209,7 +211,7 @@ public class Dictionary implements Serializable{
 		
 		temp = sortMapByValues(temp);
 		int currentSegment = NUM_SEGMENTS;
-		int nCounter = 0;/*
+		int nCounter = 0;
 		for (String word : temp.keySet()) {
 			words.get(word).setSegment(currentSegment);
 			nCounter++;
@@ -218,6 +220,6 @@ public class Dictionary implements Serializable{
 				nCounter = 0;
 				currentSegment--;
 			}
-		}*/
+		}
 	}
 }

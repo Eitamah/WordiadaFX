@@ -18,11 +18,6 @@ import javax.xml.bind.annotation.XmlList;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-
 
 /**
  * <p>Java class for anonymous complex type.
@@ -77,7 +72,7 @@ public class Letter implements Serializable{
 		if (sign == null) {
 			if (other.sign != null)
 				return false;
-		} else if (!sign.equals(other.sign))
+		} else if (!sign.get(0).equals(other.sign.get(0)))
 			return false;
 		return true;
 	}
@@ -143,24 +138,6 @@ public class Letter implements Serializable{
         return frequency;
     }
     
-    DoubleProperty freq;
-    public DoubleProperty getFreqProperty() {
-    	if (freq == null) {
-    		freq = new SimpleDoubleProperty(frequency);
-    	}
-    	
-    	return freq;
-    }
-
-    StringProperty signProp;
-    public StringProperty getSignProperty() {
-    	if (signProp == null) {
-    		signProp = new SimpleStringProperty(Character.toString(sign.get(0).charAt(0)));
-    	}
-    	
-    	return signProp;
-    }
-
     /**
      * Sets the value of the frequency property.
      * 

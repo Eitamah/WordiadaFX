@@ -11,6 +11,8 @@ package gameSettings;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Observer;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -18,11 +20,6 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlList;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
-
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 
 
 /**
@@ -71,13 +68,17 @@ public class Player implements Serializable{
     @XmlAttribute(name = "id", required = true)
     protected short id;
     
-    private StringProperty realName;
-    private StringProperty observeType;
-    private IntegerProperty observeID;
-    private IntegerProperty observeScore;
-    private List<String> wordsPlayed = new ArrayList<String>();
+    private ArrayList<String> wordsPlayed = new ArrayList<String>();
 
-    public List<String> getWordsPlayed() {
+    private String lastWordPlayed = "";
+    
+    public void setLastWord(String word) {
+    	lastWordPlayed = word;
+    }
+    public String getLastWord() {
+    	return lastWordPlayed;
+    }
+    public ArrayList<String> getWordsPlayed() {
     	return wordsPlayed;
     }
     
@@ -185,38 +186,17 @@ public class Player implements Serializable{
         this.id = value;
     }
 
-	public void setName(String string) {
-		realName = new SimpleStringProperty(string);
-	}
+	boolean isPlaying = true;
 	
-	public StringProperty getRealName() {
-		return realName;
-	}
-	
-	public IntegerProperty getObserveID() {
-		if (observeID == null) {
-			observeID = new SimpleIntegerProperty(this.id);
-		}
+	public void setIsPlaying(boolean is) {
+		isPlaying = is;
 		
-		return observeID;
-	}
-
-	public StringProperty getObserveType() {
-		if (observeType == null) {
-			observeType = new SimpleStringProperty(this.type);
+		if (!isPlaying) {
+			type = "Forfitted";
 		}
-		return observeType;
 	}
 	
-	public IntegerProperty getObserveScore() {
-		if (observeScore == null) {
-			observeScore = new SimpleIntegerProperty(0);
-		}
-		
-		return observeScore;
-	}
-	
-	public void UpdateScore(int score) {
-		observeScore.add(score);
+	public boolean isPlaying() {
+		return isPlaying;
 	}
 }

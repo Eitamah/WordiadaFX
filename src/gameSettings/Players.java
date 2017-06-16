@@ -18,7 +18,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 
 
 /**
@@ -52,10 +51,9 @@ public class Players implements Serializable{
 	 */
 	private static final long serialVersionUID = 9067517017396771893L;
 	@XmlElement(name = "Player", required = true)
-    protected List<Player> player;
+    protected ArrayList<Player> player;
 	
 	
-	//protected ObservableList<Player> playerList;
 
     /**
      * Gets the value of the player property.
@@ -79,19 +77,10 @@ public class Players implements Serializable{
      * 
      * 
      */
-    public List<Player> getPlayer() {
+    public ArrayList<Player> getPlayer() {
         if (player == null) {
             player = new ArrayList<Player>();
         }
         return this.player;
-    }
-
-    private ObservableList<Player> playerList;
-    public ObservableList<Player> getPlayersList() {
-    	if (playerList == null) {
-    		playerList = FXCollections.observableArrayList(player);
-    	}
-    	
-    	return playerList;
     }
 }

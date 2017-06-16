@@ -34,11 +34,11 @@ public class TileController extends StackPane {
 		y = nY;
 		this.setVisible(true);
 		border = new Rectangle(width, height);
-        border.setStroke(Color.GREEN);
+		border.setStroke(Color.BLACK);
         border.setFill(null);
         setTranslateX(x * width);
         setTranslateY(y * height);
-		text.setFont(Font.font(18));
+//		text.setFont(Font.font(18));
 		tile = i_tile;
 		text.setVisible(true);
 		getChildren().addAll(border, text);
@@ -47,16 +47,32 @@ public class TileController extends StackPane {
 	}
 	
 	private Object Clicked() {
-//		game.TilePressed(this);
+		game.TileClicked(this);
+		Refresh();
 		return null;
 	}
 
 	public void Refresh()
 	{
-/*		if (tile.getState() == eTileState.FACE_UP) */{
+		if (tile.getState() == eTileState.FACE_UP) {
 			int letterPoints = game.gameManager.getCurrentGame().getSettings().getLetterScore(tile.getSign());
 			text.setText(Character.toString(tile.getSign()) + "(" + Integer.toString(letterPoints) + ")"); // TODO: Add points
+		} else if (tile.getState() == eTileState.EMPTY) {
+			text.setText(Character.toString(Tile.EMPTY_SIGN));
+		} else {
+			text.setText("");
+		}
+		
+		if (tile.isSelected()) {
+			border.setStroke(Color.DARKRED);
+			border.setFill(Color.YELLOW);
+		} else {
+			border.setStroke(Color.BLACK);
+			border.setFill(Color.WHITE);
 		}
 	}
-	
+
+	public Tile getTile() {
+		return tile;
+	}
 }

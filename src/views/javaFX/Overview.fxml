@@ -4,6 +4,7 @@
 <?import javafx.scene.control.CheckBox?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TableColumn?>
@@ -29,7 +30,7 @@
       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
   </rowConstraints>
    <children>
-      <Pane fx:id="paneBoard" prefHeight="175.0" prefWidth="222.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="1" GridPane.rowSpan="2" />
+      <Pane fx:id="paneBoard" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="175.0" prefWidth="222.0" GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.rowSpan="2" GridPane.vgrow="ALWAYS" />
       <TabPane fx:id="tabPaneSettingsTab" prefHeight="334.0" prefWidth="599.0" tabClosingPolicy="UNAVAILABLE" GridPane.rowIndex="1" GridPane.rowSpan="2">
          <tabs>
             <Tab fx:id="tabGameSettings" text="Game Settings">
@@ -37,10 +38,10 @@
                   <AnchorPane fx:id="anchorTabAnchor" minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                      <children>
                         <CheckBox fx:id="chkboxGoldFishMode" disable="true" layoutX="14.0" layoutY="46.0" mnemonicParsing="false" opacity="0.99" text="GoldFish Mode" />
-                        <Label fx:id="labelScore" layoutX="14.0" layoutY="119.0" text="Score: Wordcount" />
+                        <Label fx:id="labelScore" layoutX="14.0" layoutY="119.0" text="Score: " />
                         <ComboBox fx:id="comboSkin" layoutX="14.0" layoutY="161.0" onAction="#handleSkinChanged" prefWidth="150.0" promptText="Skin" />
-                        <CheckBox fx:id="chckboxAnimation" layoutX="14.0" layoutY="80.0" mnemonicParsing="false" onAction="#handleAnimationCheck" text="Animation" />
                         <Label fx:id="labelTilesLeft" layoutX="14.0" layoutY="217.0" text="Tiles Left :" />
+                        <Label fx:id="labelBoardSize" layoutX="14.0" layoutY="255.0" text="Board size:" />
                      </children>
                   </AnchorPane>
                </content>
@@ -112,7 +113,7 @@
         </rowConstraints>
          <children>
             <Button fx:id="btnPrev" mnemonicParsing="false" onAction="#handlePrevBtnPressed" prefHeight="40.0" prefWidth="112.0" text="Prev" GridPane.rowIndex="1" />
-            <Button mnemonicParsing="false" prefHeight="38.0" prefWidth="130.0" text="Next" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Button fx:id="btnNext" mnemonicParsing="false" onAction="#handleNextBtnPressed" prefHeight="38.0" prefWidth="130.0" text="Next" GridPane.columnIndex="1" GridPane.rowIndex="1" />
          </children>
       </GridPane>
       <GridPane GridPane.columnIndex="1">
@@ -126,10 +127,13 @@
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <Button fx:id="btnLoadButton" mnemonicParsing="false" onAction="#handleLoadBtnPressed" text="Load" GridPane.rowIndex="1" />
-            <Button fx:id="btnStart" mnemonicParsing="false" onAction="#handleStartBtnPressed" text="Start" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <Button fx:id="btnLoadButton" mnemonicParsing="false" onAction="#handleLoadBtnPressed" text="Load" />
+            <Button fx:id="btnStart" mnemonicParsing="false" onAction="#handleStartBtnPressed" text="Start" GridPane.columnIndex="1" />
             <Label fx:id="lblCurrentPlayer" text="Current Player:" GridPane.rowIndex="2" />
             <Button fx:id="btnAddPlayer" disable="true" mnemonicParsing="false" onAction="#handleAddPlayerBtnPressed" text="Add Player" visible="false" />
+            <Label fx:id="labelGameState" text="Game State:" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Label fx:id="labelTurns" text="Turns" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <ProgressBar fx:id="barLoad" prefWidth="200.0" progress="0.0" GridPane.rowIndex="1" />
          </children>
       </GridPane>
       <GridPane GridPane.columnIndex="1" GridPane.rowIndex="3">
@@ -143,13 +147,18 @@
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <children>
-            <HBox prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+            <HBox prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+               <children>
+                  <Label fx:id="labelDice" text="Dice roll:" />
+               </children></HBox>
             <Button fx:id="btnUndo" mnemonicParsing="false" onAction="#handleUndoPressed" text="Undo" GridPane.rowIndex="2" />
             <Button fx:id="btnFlip" layoutX="10.0" layoutY="77.0" mnemonicParsing="false" onAction="#handleFlipPressed" text="Flip" />
             <Button fx:id="btnForfiet" layoutX="10.0" layoutY="11.0" mnemonicParsing="false" onAction="#handleForfietPressed" text="Forfiet" GridPane.rowIndex="1" />
-            <Label fx:id="labelWord" text="Label" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Label fx:id="labelWord" text="Word" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <Button fx:id="bntRollDice" mnemonicParsing="false" onAction="#handleRollPressed" text="Dice" GridPane.columnIndex="1" />
          </children>
       </GridPane>
-      <Button fx:id="bntRollDice" mnemonicParsing="false" onAction="#handleRollPressed" text="Dice" GridPane.columnIndex="2" GridPane.rowIndex="3" />
+      <Label fx:id="labelWordCount" text="Total Words:" GridPane.columnIndex="3" GridPane.rowIndex="2" />
+      <Button fx:id="buttonSubmitWord" mnemonicParsing="false" onAction="#handleSubmitWordPressed" text="Submit Word" GridPane.columnIndex="2" GridPane.rowIndex="3" />
    </children>
 </GridPane>

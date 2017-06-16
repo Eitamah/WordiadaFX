@@ -18,10 +18,11 @@ public class Tile extends StackPane implements Serializable{
 		EMPTY
 	}
 
-	private static final char EMPTY_SIGN = '*';
+	public static final char EMPTY_SIGN = '*';
 	
 	private Point coord;
 	private eTileState state;
+	private boolean isSelected;
 	@Override
 	public int hashCode() {
 		final int prime = 31;
@@ -85,6 +86,15 @@ public class Tile extends StackPane implements Serializable{
 		state = eTileState.FACE_DOWN;
 		letter = newLetter;
 		coord = new Point(x, y);
+		isSelected = false;
+	}
+	
+	public boolean isSelected() {
+		return isSelected;
+	}
+	
+	public void setSelected(boolean bool) {
+		isSelected = bool;
 	}
 	
 	public Point getCoord() {
